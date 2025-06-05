@@ -1,0 +1,4 @@
+#!/bin/bash
+export host=10.120.8.118
+export username=dbc
+export password=dbc
