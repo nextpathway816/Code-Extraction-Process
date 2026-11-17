@@ -1,0 +1,72 @@
+.LOGON tdpid/username,password;
+.SET WIDTH 65531
+.SET TITLEDASHES OFF
+.SET RETLIMIT *
+
+/* This file only runs SELECT and SHOW statements. It does not change anything on your system. */
+
+.EXPORT REPORT FILE=<<OUT>>/Object_Type_Summary.log
+SELECT TRIM(DatabaseName) AS DatabaseName, TableKind, COUNT(*) AS ObjectCount
+FROM DBC.TablesV
+WHERE DatabaseName <<INCLUDE>> AND DatabaseName <<EXCLUDE>>
+GROUP BY 1, 2 ORDER BY 1, 2;
+.EXPORT RESET
+
+.EXPORT REPORT FILE=<<OUT>>/Object_Type_List.log
+SELECT TRIM(DatabaseName) AS DatabaseName, TRIM(TableName) AS ObjectName, TableKind
+FROM DBC.TablesV
+WHERE DatabaseName <<INCLUDE>> AND DatabaseName <<EXCLUDE>>
+ORDER BY 1, 3, 2;
+.EXPORT RESET
+
+.EXPORT REPORT FILE=<<OUT>>/SHOW_Tables.sql
+SELECT 'SHOW TABLE "' || TRIM(DatabaseName) || '"."' || TRIM(TableName) || '";' (TITLE '')
+FROM DBC.TablesV
+WHERE TableKind IN ('T', 'O') AND DatabaseName <<INCLUDE>> AND DatabaseName <<EXCLUDE>>
+ORDER BY TRIM(DatabaseName), TRIM(TableName);
+.EXPORT RESET
+
+.EXPORT REPORT FILE=<<OUT>>/SHOW_Views.sql
+SELECT 'SHOW VIEW "' || TRIM(DatabaseName) || '"."' || TRIM(TableName) || '";' (TITLE '')
+FROM DBC.TablesV
+WHERE TableKind = 'V' AND DatabaseName <<INCLUDE>> AND DatabaseName <<EXCLUDE>>
+ORDER BY TRIM(DatabaseName), TRIM(TableName);
+.EXPORT RESET
+
+.EXPORT REPORT FILE=<<OUT>>/SHOW_Procedures.sql
+SELECT 'SHOW PROCEDURE "' || TRIM(DatabaseName) || '"."' || TRIM(TableName) || '";' (TITLE '')
+FROM DBC.TablesV
+WHERE TableKind IN ('P', 'E') AND DatabaseName <<INCLUDE>> AND DatabaseName <<EXCLUDE>>
+ORDER BY TRIM(DatabaseName), TRIM(TableName);
+.EXPORT RESET
+
+.EXPORT REPORT FILE=<<OUT>>/DDL_Database.sql
+SELECT 'CREATE DATABASE "' || TRIM(DatabaseName) || '" FROM "' || TRIM(OwnerName)
+    || '" AS PERM = ' || TRIM(CAST(CAST(PermSpace AS DECIMAL(18,0)) AS VARCHAR(30))) || ';' (TITLE '')
+FROM DBC.DatabasesV
+WHERE DatabaseName <<INCLUDE>> AND DatabaseName <<EXCLUDE>>
+ORDER BY TRIM(DatabaseName);
+.EXPORT RESET
+
+/* DROP statements are written to a file as text only. Nothing is dropped. */
+.EXPORT REPORT FILE=<<OUT>>/DDL_Drop_Databases.sql
+SELECT 'DROP DATABASE "' || TRIM(DatabaseName) || '";' (TITLE '')
+FROM DBC.DatabasesV
+WHERE DatabaseName <<INCLUDE>> AND DatabaseName <<EXCLUDE>>
+ORDER BY TRIM(DatabaseName);
+.EXPORT RESET
+
+.EXPORT REPORT FILE=<<OUT>>/DDL_Tables.sql
+.RUN FILE=<<OUT>>/SHOW_Tables.sql
+.EXPORT RESET
+
+.EXPORT REPORT FILE=<<OUT>>/DDL_Views.sql
+.RUN FILE=<<OUT>>/SHOW_Views.sql
+.EXPORT RESET
+
+.EXPORT REPORT FILE=<<OUT>>/DDL_Procedures.sql
+.RUN FILE=<<OUT>>/SHOW_Procedures.sql
+.EXPORT RESET
+
+.LOGOFF
+.QUIT
